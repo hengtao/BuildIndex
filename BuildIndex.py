@@ -203,8 +203,8 @@ required arguments:
 
 '''.format(scriptpath = scriptpath))
 	
-	parse.add_argument('-log', '--blogfile', required = True, dest = "logfile", help = "logfile to record running logs", type = str, nargs = '?')
-	parse.add_argument('-gtf', '--gtf', required = True, dest = "gtf", help = "annotation file in gtf format", type = str, nargs = '?')
+	parse.add_argument('-log', '--blogfile', required = True, dest = "logfile", help = "Required,logfile to record running logs", type = str, nargs = '?')
+	parse.add_argument('-gtf', '--gtf', required = True, dest = "gtf", help = "Required,annotation file in gtf format", type = str, nargs = '?')
 
 	parse.add_argument('-ht2', '--hisat2index', required = False, dest = "hisat2index", help = "build hisat2 index or not", default = "yes", choices = ["yes", "no"], type = str, nargs = '?')
 	parse.add_argument('-fai', '--faindex', required = False, dest = "faindex", help = "build samtools fai index or not", default = "yes", choices = ["yes", "no"], type = str, nargs = '?')
