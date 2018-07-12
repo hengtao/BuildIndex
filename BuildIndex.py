@@ -29,7 +29,7 @@ def LogRecord(logger, loginfo):
 def Cmd_and_Time(cmd, logger):
 	starttime, logger = LogRecord(logger, cmd)
 	p = subprocess.Popen(cmd, shell = True)
-	#p.wait()
+	p.wait()
 	if(p.returncode != 0):
 		logger.exception("COMMAND fail:----\n{cmd}".format(cmd = cmd))
 		sys.exit(1)
@@ -132,18 +132,23 @@ class BuildIndex():
 		self.bwasoft  = bwasoft
 	def buildindex(self):
 		if self.fai == "yes":
+			faifile = self.genomefile + ".fai"
 			cmd = "{samtools} faidx {genome}".format(samtools = self.samtools, genome = self.genomefile)
-			Cmd_and_Time(cmd, logger)
+			if not os.path.exists(faifile):
+				Cmd_and_Time(cmd, logger)
 		if self.dict == "yes":
 			dictfile = self.genomefile.replace("fa", "dict")
 			cmd = "{samtools} dict -o {dictfile} {genome}".format(samtools = self.samtools, dictfile = dictfile, genome = self.genomefile)
-			Cmd_and_Time(cmd,logger)
+			if not os.path.exists(dictfile):
+				Cmd_and_Time(cmd,logger)
 			dirname = os.path.dirname(self.genome)
 			bedfile = self.gtf.replace("gtf", "bed")
-			gtf2bed(self.gtf, bedfile)
+			if not os.path.exists(bedfile):
+				gtf2bed(self.gtf, bedfile)
 			intervallist = self.gtf.replace("gtf", "interval_list")
 			cmd = "java -Xmx5g -XX:ParallelGCThreads=2 -Djava.io.tmpdir={dirname} -jar {picard} I={bedfile} SORT=true SD={dict} O={intervallist}".format(dirname = dirname, picard = self.picard, bedfile = bedfile , dict = dictfile, intervallist = intervallist)
-			Cmd_and_Time(cmd, logger)
+			if not os.path.exists(intervallist):
+				Cmd_and_Time(cmd, logger)
 		if self.ht2 == "yes":
 			pattern = re.sub(r".fa|.fasta|.fna|.fa.gz|.fasta.gz|.fna.gz")
 			splicefile = self.genomefile.replace("fa", "splicesite.txt")
@@ -152,10 +157,15 @@ class BuildIndex():
 			cmd = "{hisplice} {gtf} > {splicefile} \n".format(hisplice = self.hisplice, gtf = self.gtf, splicefile = splicefile)
 			cmd += "{hiexons} {gtf} > {exonfile} \n".format(hiexons = self.hiexons, gtf = self.gtf, exonfile = exonfile)
 			cmd += "{hisat2_build} --exon {exons} --ss {splicesite} {ref} {refbase}".format(hisat2_build = self.hisat2, exons = exonfile, splicesite = splicefile, ref = self.genome, refbase = refbase)
-			Cmd_and_Time(cmd, logger)
+			ht25 = self.genomefile.replace("fa","5.ht2")
+			ht25l = self.genomefile.replace("fa","5.ht2l")
+			if not os.path.exists(ht25) and not os.path.exists(ht25l):
+				Cmd_and_Time(cmd, logger)
 		if self.bwa == "yes":
 			cmd = "{bwa} index {ref}".format(bwa = self.bwasoft, ref = self.genome)
-			Cmd_and_Time(cmd, logger)
+			annfile = self.genomefile + ".ann"
+			if not os.path.exists(annfile):
+				Cmd_and_Time(cmd, logger)
 			
 			
 def main(args):
@@ -196,15 +206,15 @@ Usage:
 python3 {scriptpath}/BuildIndex.py <args> <args> ... <genome.fa>
 
 required arguments:
-<genome.fa>     Reference genome file in fa/fasta/fna format.
-<genome.gtf>    Annotation file for genome in gtf format.
-<logfile>       Logfile to record running log.
+<genome.fa>		Reference genome file in fa/fasta/fna format.
+<genome.gtf>	Annotation file for genome in gtf format.
+<logfile>		Logfile to record running log.
 
 
 '''.format(scriptpath = scriptpath))
 	
-	parse.add_argument('-log', '--blogfile', required = True, dest = "logfile", help = "Required,logfile to record running logs", type = str, nargs = '?')
-	parse.add_argument('-gtf', '--gtf', required = True, dest = "gtf", help = "Required,annotation file in gtf format", type = str, nargs = '?')
+	parse.add_argument('-log', '--blogfile', required = True, dest = "logfile", help = "logfile to record running logs", type = str, nargs = '?')
+	parse.add_argument('-gtf', '--gtf', required = True, dest = "gtf", help = "annotation file in gtf format", type = str, nargs = '?')
 
 	parse.add_argument('-ht2', '--hisat2index', required = False, dest = "hisat2index", help = "build hisat2 index or not", default = "yes", choices = ["yes", "no"], type = str, nargs = '?')
 	parse.add_argument('-fai', '--faindex', required = False, dest = "faindex", help = "build samtools fai index or not", default = "yes", choices = ["yes", "no"], type = str, nargs = '?')
